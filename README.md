@@ -1,9 +1,8 @@
 # MultiPerceptron
 
 ####Introduction
-> MultiPerceptron is an implementation of Multiclass
-> perceptron. Using one-vs-all method to make multiclass
-> classification. And using the moudle cPickle to save
+> MultiPerceptron is an implementation of Multiclass perceptron. Using one-vs-all
+> method to make multiclass classification. And using the moudle cPickle to save
 > and load perceptron model from file.
 
 ####Files
