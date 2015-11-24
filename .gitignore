@@ -1,3 +1,6 @@
 test.py
 
 MultiPerceptron.pyc
+
+trainDigits.data
+testDigits.data

@@ -9,7 +9,6 @@ http://github.com/heshenghuan
 
 import math
 import random
-import copy
 import codecs
 import datetime
 import numpy as np
@@ -62,7 +61,7 @@ class MultiPerceptron(object):
         """
         self.path = path
 
-    def saveModel(self):
+    def saveModel(self, path=r'./'):
         """
         Stores the model under given folder path.
         """
@@ -191,6 +190,7 @@ class MultiPerceptron(object):
         Returns a row vector by 1*(n+1).
         """
         sample_vec = np.zeros((1, self.feat_size + 1))
+        sample_vec[0, 0] = 1.0
         for i in sample.keys():
             sample_vec[0][i] = sample[i]
 
@@ -218,15 +218,15 @@ class MultiPerceptron(object):
         for j in range(N):
             sample = self.sample_list[j]
             result = self.predict(self.__getSampleVec(sample))
-            max_label_id = result.index(max(result))
-            max_label = self.label_set[max_label_id]
-            real_label = self.label_list[j]
-            real_label_id = self.label_set.index(real_label)
-            if real_label != max_label:
+            pred_id = result.index(max(result))
+            pred = self.label_set[pred_id]
+            label = self.label_list[j]
+            label_id = self.label_set.index(label)
+            if label != pred:
                 error_count += 1
-                loss += (result[max_label_id] - result[real_label_id])
+                loss += (result[pred_id] - result[label_id])
 
-        # loss /= N #error_count if error_count != 0 else 1
+        loss /= N #error_count if error_count != 0 else 1
         return (error_count, loss)
 
     def train_mini_batch(self, batch_num=100, max_iter=100, learn_rate=0.01,
@@ -235,7 +235,6 @@ class MultiPerceptron(object):
         print "START TRAIN MINI BATCH:"
         N = len(self.sample_list)    # number of sample
         M = self.feat_size + 1  # number of feature
-        C = self.class_num
 
         if batch_num > N:
             batch_num = N
@@ -261,13 +260,13 @@ class MultiPerceptron(object):
             for i in batch_list:
                 X = self.__getSampleVec(sample_list[i])
                 result = self.predict(X)
-                max_label_id = result.index(max(result))
-                max_label = self.label_set[max_label_id]
-                real_label = self.label_list[i]
-                real_label_id = self.label_set.index(real_label)
-                if real_label != max_label:
-                    delta[real_label_id] += learn_rate * X.reshape((M,))
-                    delta[max_label_id] -= learn_rate * X.reshape((M,))
+                pred_id = result.index(max(result))
+                pred = self.label_set[pred_id]
+                label = self.label_list[i]
+                label_id = self.label_set.index(label)
+                if label != pred:
+                    delta[label_id] += learn_rate * X.reshape((M,))
+                    delta[pred_id] -= learn_rate * X.reshape((M,))
 
             # weight update
             omega += delta
@@ -284,16 +283,9 @@ class MultiPerceptron(object):
             print "stop:\t", time2
 
             if rd > 1:
-                if abs(loss - last) < delta_thrd:
-                    # if cost value change less than threshold more than 5
-                    # round, then finished training process
-                    flag += 1
-                    if flag > 5:
-                        print "Reach the minimal loss value threshold!"
-                        break
-                else:
-                    # else reset flag
-                    flag = 0
+                if last - loss < delta_thrd and last >= loss:
+                    print "Reach the minimal loss value threshold!"
+                    break
             rd += 1
             last = loss
 
@@ -312,7 +304,6 @@ class MultiPerceptron(object):
         print "START TRAIN BATCH:"
         N = len(self.sample_list)    # number of sample
         M = self.feat_size + 1  # number of feature
-        C = self.class_num
 
         sample_list = self.sample_list
         omega = self.Theta
@@ -330,15 +321,15 @@ class MultiPerceptron(object):
             for i in xrange(N):
                 X = self.__getSampleVec(sample_list[i])
                 result = self.predict(X)
-                max_label_id = result.index(max(result))
-                max_label = self.label_set[max_label_id]
-                real_label = self.label_list[i]
-                real_label_id = self.label_set.index(real_label)
-                if real_label != max_label:
+                pred_id = result.index(max(result))
+                pred = self.label_set[pred_id]
+                label = self.label_list[i]
+                label_id = self.label_set.index(label)
+                if label != pred:
                     error_count += 1
-                    loss += (result[max_label_id] - result[real_label_id])
-                    delta[real_label_id] += learn_rate * X.reshape((M,))
-                    delta[max_label_id] -= learn_rate * X.reshape((M,))
+                    loss += (result[pred_id] - result[label_id])
+                    delta[label_id] += learn_rate * X.reshape((M,))
+                    delta[pred_id] -= learn_rate * X.reshape((M,))
 
             acc = 1 - float(error_count) / N
             loss /= error_count if error_count != 0 else 1
@@ -352,16 +343,9 @@ class MultiPerceptron(object):
             omega += delta
             omega_sum += omega
             if rd > 1:
-                if abs(loss - last) < delta_thrd:
-                    # if cost value change less than threshold more than 5
-                    # round, then finished training process
-                    flag += 1
-                    if flag > 5:
-                        print "Reach the minimal loss value threshold!"
-                        break
-                else:
-                    # else reset flag
-                    flag = 0
+                if last - loss < delta_thrd and last >= loss:
+                    print "Reach the minimal loss value threshold!"
+                    break
             rd += 1
             last = loss
 
@@ -375,13 +359,12 @@ class MultiPerceptron(object):
         print "start time:\t", start_clock
         print "stop time:\t", stop_clock
 
-    def train_sgd(self, max_iter=100, learn_rate=1.0, delta_thrd=0.00001,
+    def train_sgd(self, max_iter=100, learn_rate=1.0, delta_thrd=0.1,
                   is_average=True):
         print '-' * 60
         print "START TRAIN SGD:"
         N = len(self.sample_list)    # number of sample
         M = self.feat_size + 1  # number of feature
-        C = self.class_num
 
         # convert to extend sample set
         sample_list = self.sample_list
@@ -398,23 +381,16 @@ class MultiPerceptron(object):
                 loop = rd/N
                 error_count, loss = self.__getCost()
                 acc = 1 - error_count / float(N)
-                loss /= error_count
+                # loss /= error_count
                 time2 = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 print '\nIter:', loop, '\tCost:', '%.8f' % loss,
                 print '\tAcc:', '%.4f' % acc, "\tError: %4d" % error_count
                 print 'start:\t', time1
                 print "stop:\t", time2
                 if loop > 1:
-                    if loss < delta_thrd:
-                        # if cost value change less than threshold more than 5
-                        # round, then finished training process
-                        flag += 1
-                        if flag > 5:
-                            print "Reach the minimal loss value threshold!"
-                            break
-                    else:
-                        # else reset flag
-                        flag = 0
+                    if last - loss < delta_thrd and last >= loss:
+                        print "Reach the minimal loss value threshold!"
+                        break
                 last = loss
 
             # Choose a random sample
@@ -422,14 +398,14 @@ class MultiPerceptron(object):
             i = random.randint(0, N - 1)
             X = self.__getSampleVec(sample_list[i])
             result = self.predict(X)
-            max_label_id = result.index(max(result))
-            max_label = self.label_set[max_label_id]
-            real_label = self.label_list[i]
-            real_label_id = self.label_set.index(real_label)
+            pred_id = result.index(max(result))
+            pred = self.label_set[pred_id]
+            label = self.label_list[i]
+            label_id = self.label_set.index(label)
             # weight update
-            if real_label != max_label:
-                omega[real_label_id] += learn_rate * X.reshape((M,))
-                omega[max_label_id] -= learn_rate * X.reshape((M,))
+            if label != pred:
+                omega[label_id] += learn_rate * X.reshape((M,))
+                omega[pred_id] -= learn_rate * X.reshape((M,))
 
             rd += 1
             if is_average:
@@ -457,16 +433,16 @@ class MultiPerceptron(object):
     def probout(self, sample_test):
         score = self.scoreout(sample_test)
         prb = {}
-        for label in score.keys():
-            prb[label] = self.sigmoid(score[label])
+        for key in score.keys():
+            prb[key] = self.sigmoid(score[key])
         return prb
 
     def classify(self, sample_test):
         X = self.__getSampleVec(sample_test)
-        weighted_sum = self.predict(X)
-        max_label_id = weighted_sum.index(max(weighted_sum))
-        max_label = self.label_set[max_label_id]
-        return max_label
+        result = self.predict(X)
+        pred_id = result.index(max(result))
+        pred = self.label_set[pred_id]
+        return pred
 
     def batch_classify(self, sample_list_test):
         label_list_test = []
