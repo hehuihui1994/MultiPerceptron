@@ -11,6 +11,7 @@ import math
 import random
 import codecs
 import datetime
+import time
 import numpy as np
 from cPickle import dump
 from cPickle import load
@@ -120,15 +121,11 @@ class MultiPerceptron(object):
         try:
             inputs = open(theta, 'rb')
             self.Theta = load(inputs)
-            # self.feat_dimension = self.Theta.shape[1] - 1
             return True
         except IOError:
             print "Error:File does"
             print "Corresponding file \"Theta.pkl\" doesn\'t exist!"
             return False
-        # inputs = open(self.path + r"Theta.pkl", 'rb')
-        # self.Theta = load(inputs)
-        # inputs.close()
 
     def loadFeatSize(self, size, classNum):
         """
@@ -175,9 +172,6 @@ class MultiPerceptron(object):
         Initialization successed, returns True. If not, returns False.
         """
         if self.feat_size != 0 and self.class_num != 0:
-            # theta = []
-            # for i in xrange(self.class_num):
-            #     theta.append([0.]*(self.feat_dimension+1))
             self.Theta = np.zeros((self.class_num, self.feat_size + 1))
             return True
         else:
@@ -207,6 +201,20 @@ class MultiPerceptron(object):
         # return normalize(pred)
         return pred
 
+    def predict2(self, sample):
+        """
+        Returns the predict vector, this function uses the raw sample to
+        calculate while the predict<function> uses vector to represent the
+        sample.
+        """
+        pred = []
+        C = self.class_num
+        for i in range(C):
+            score = sum(self.Theta[i, key]*val for key, val in sample.items())
+            pred.append(score)
+
+        return pred
+
     def __getCost(self):
         """
         Returns the cost function value by using current Theta.
@@ -217,7 +225,8 @@ class MultiPerceptron(object):
         loss = 0.
         for j in range(N):
             sample = self.sample_list[j]
-            result = self.predict(self.__getSampleVec(sample))
+            # result = self.predict(self.__getSampleVec(sample))
+            result = self.predict2(sample)
             pred_id = result.index(max(result))
             pred = self.label_set[pred_id]
             label = self.label_list[j]
@@ -226,7 +235,7 @@ class MultiPerceptron(object):
                 error_count += 1
                 loss += (result[pred_id] - result[label_id])
 
-        loss /= N #error_count if error_count != 0 else 1
+        loss /= N
         return (error_count, loss)
 
     def train_mini_batch(self, batch_num=100, max_iter=100, learn_rate=0.01,
@@ -250,7 +259,7 @@ class MultiPerceptron(object):
         print start_clock
         while rd <= max_iter:
             delta = np.zeros(omega.shape)
-            time1 = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            # time1 = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             batch_list = []
             while(len(batch_list) < batch_num):
                 index = random.randint(0, N - 1)
@@ -258,15 +267,15 @@ class MultiPerceptron(object):
                     batch_list.append(index)
 
             for i in batch_list:
-                X = self.__getSampleVec(sample_list[i])
-                result = self.predict(X)
+                result = self.predict2(sample_list[i])
                 pred_id = result.index(max(result))
                 pred = self.label_set[pred_id]
                 label = self.label_list[i]
                 label_id = self.label_set.index(label)
                 if label != pred:
-                    delta[label_id] += learn_rate * X.reshape((M,))
-                    delta[pred_id] -= learn_rate * X.reshape((M,))
+                    for key, val in sample_list[i].items():
+                        delta[label_id, key] += learn_rate * val
+                        delta[pred_id, key] -= learn_rate * val
 
             # weight update
             omega += delta
@@ -276,11 +285,11 @@ class MultiPerceptron(object):
             error_count, loss = self.__getCost()
             acc = 1 - error_count / float(N)
             # loss /= N
-            time2 = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            print '\nIter:', rd, '\tCost:', '%.8f' % loss,
+            # time2 = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            print 'Iter:', rd, '\tCost:', '%.8f' % loss,
             print '\tAcc:', '%.4f' % acc, "\tError: %4d" % error_count
-            print 'start:\t', time1
-            print "stop:\t", time2
+            # print 'start:\t', time1
+            # print "stop:\t", time2
 
             if rd > 1:
                 if last - loss < delta_thrd and last >= loss:
@@ -317,10 +326,9 @@ class MultiPerceptron(object):
             error_count = 0
             loss = 0.
             delta = np.zeros(omega.shape)
-            time1 = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            # time1 = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             for i in xrange(N):
-                X = self.__getSampleVec(sample_list[i])
-                result = self.predict(X)
+                result = self.predict2(sample_list[i])
                 pred_id = result.index(max(result))
                 pred = self.label_set[pred_id]
                 label = self.label_list[i]
@@ -328,16 +336,17 @@ class MultiPerceptron(object):
                 if label != pred:
                     error_count += 1
                     loss += (result[pred_id] - result[label_id])
-                    delta[label_id] += learn_rate * X.reshape((M,))
-                    delta[pred_id] -= learn_rate * X.reshape((M,))
+                    for key, val in sample_list[i].items():
+                        delta[label_id, key] += learn_rate * val
+                        delta[pred_id, key] -= learn_rate * val
 
             acc = 1 - float(error_count) / N
             loss /= error_count if error_count != 0 else 1
-            time2 = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            print '\nIter:', rd, '\tCost:', '%.8f' % loss,
+            # time2 = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            print 'Iter:', rd, '\tCost:', '%.8f' % loss,
             print '\tAcc:', '%.4f' % acc, "\tError: %4d" % error_count
-            print 'start:\t', time1
-            print "stop:\t", time2
+            # print 'start:\t', time1
+            # print "stop:\t", time2
 
             # weight update
             omega += delta
@@ -376,37 +385,36 @@ class MultiPerceptron(object):
         flag = 0
         start_clock = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print start_clock
+        # time1 = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         while rd < max_iter * N:
             if rd % N == 0 and rd != 0:
                 loop = rd/N
                 error_count, loss = self.__getCost()
                 acc = 1 - error_count / float(N)
-                # loss /= error_count
-                time2 = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                print '\nIter:', loop, '\tCost:', '%.8f' % loss,
+                # time2 = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                print 'Iter:', loop, '\tCost:', '%.8f' % loss,
                 print '\tAcc:', '%.4f' % acc, "\tError: %4d" % error_count
-                print 'start:\t', time1
-                print "stop:\t", time2
+                # print 'start:\t', time1
+                # print "stop:\t", time2
                 if loop > 1:
                     if last - loss < delta_thrd and last >= loss:
                         print "Reach the minimal loss value threshold!"
                         break
                 last = loss
+                # time1 = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
             # Choose a random sample
-            time1 = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             i = random.randint(0, N - 1)
-            X = self.__getSampleVec(sample_list[i])
-            result = self.predict(X)
+            result = self.predict2(sample_list[i])
             pred_id = result.index(max(result))
             pred = self.label_set[pred_id]
             label = self.label_list[i]
             label_id = self.label_set.index(label)
             # weight update
             if label != pred:
-                omega[label_id] += learn_rate * X.reshape((M,))
-                omega[pred_id] -= learn_rate * X.reshape((M,))
-
+                for key, val in sample_list[i].items():
+                    omega[label_id, key] += learn_rate * val
+                    omega[pred_id, key] -= learn_rate * val
             rd += 1
             if is_average:
                 omega_sum += omega
