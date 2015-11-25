@@ -17,9 +17,6 @@ from cPickle import dump
 from cPickle import load
 
 
-CHANGED = "Updated on 13:18 2015-11-25"
-
-
 def calc_acc(labellist1, labellist2):
     samelist = [int(x == y) for (x, y) in zip(labellist1, labellist2)]
     accuracy = float((samelist.count(1))) / len(samelist)
