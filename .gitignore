@@ -4,3 +4,8 @@ MultiPerceptron.pyc
 
 trainDigits.data
 testDigits.data
+
+*.o
+
+mptrain
+mpclassify
