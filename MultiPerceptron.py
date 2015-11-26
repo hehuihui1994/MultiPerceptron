@@ -255,6 +255,7 @@ class MultiPerceptron(object):
         start_clock = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print start_clock
         while rd <= max_iter:
+            # start = time.clock()
             delta = np.zeros(omega.shape)
             # time1 = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             batch_list = []
@@ -273,10 +274,12 @@ class MultiPerceptron(object):
                     for key, val in sample_list[i].items():
                         delta[label_id, key] += learn_rate * val
                         delta[pred_id, key] -= learn_rate * val
+            # print "Calc update:%.3fs"%(time.clock() - start)
 
             # weight update
             omega += delta
-            omega_sum += omega
+            if is_average:
+                omega_sum += omega
 
             # Get error & cost function value
             error_count, loss = self.__getCost()
