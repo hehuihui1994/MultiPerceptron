@@ -1,38 +1,48 @@
 # MultiPerceptron
 
-####Introduction
+#### Introduction
 > MultiPerceptron is an implementation of Multiclass perceptron.
 
-####Files
+#### Files
 Here are two files. One is the source code of MultiPerceptron, the other one is the introduction of data format. 
 
-- MultiPercetron.py<br>
-Python 2.7 code of Multiclass Perceptron.
+- MultiPercetron.py
+  
+  Python 2.7 code of Multiclass Perceptron.
 
-- DataFormat.txt<br>
+- DataFormat.txt
+  
   Introduction of data format.
   
-- MultiPerceptron.h<br>
+- MultiPerceptron.h
+
   head file of Multiperceptron class declaration.
 
-- MultiPerceptron.cpp<br>
+- MultiPerceptron.cpp
+  
   C++ code of MultiPerceptron.
   
-- mptrain.cpp & mpclassify.cpp<br>
+- mptrain.cpp & mpclassify.cpp
+  
   code of train & classify module.
   
-- Makefile<br>
+- Makefile
+  
   File used to compile mptrain.cpp & mpclassify.cpp and generate corresponding executable file.
 
 
-####Updates
+#### Updates
+updates on 2016-10-25:
+
+- Now mptrain can specify the dimensionality of features while using option '-d'.
+
 updates on 2015-11-25:
 
 - Use numpy.matrix to store weights matrix of perceptron.
 
 - When vector is sparse and it's dimensionality is very big, using function *predict2()* to calculate dot product of two vector is much more effective than using *predict()*
 
-Updates on 2015-11-26:
+updates on 2015-11-26:
 
 - Added a c++ implementation of multiperceptron.
 

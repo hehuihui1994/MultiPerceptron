@@ -90,7 +90,7 @@ void MultiPerceptron::read_samp_file(string samp_file, vector<feature> &samp_fea
 }
 
 
-void MultiPerceptron::load_training_file(string training_file)
+void MultiPerceptron::load_training_file(string training_file, int dimension)
 {
 	cout << "Loading training data..." << endl;
 	read_samp_file(training_file, samp_feat_vec, samp_class_vec);
@@ -106,6 +106,7 @@ void MultiPerceptron::load_training_file(string training_file)
 	}
 	class_set_size += 1;
 	feat_set_size += 1;
+	feat_set_size = MAX(feat_set_size, dimension);
 }
 
 void MultiPerceptron::init_omega()

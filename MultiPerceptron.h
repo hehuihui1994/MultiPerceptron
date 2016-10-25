@@ -11,6 +11,8 @@
 #include <time.h>
 using namespace std;
 
+#define MAX(a,b) ((a>=b)?a:b)
+
 struct feature
 {
 	vector<int> id_vec;					//index
@@ -32,7 +34,7 @@ public:
     ~MultiPerceptron();
 	void save_model(string model_file);
     void load_model(string model_file);
-	void load_training_file(string training_file);
+	void load_training_file(string training_file, int dimension);
 	void init_omega();
 	
     int train_SGD(int max_loop, double loss_thrd, float learn_rate, int avg);

@@ -11,8 +11,9 @@ void print_help() {
 		<< "options: -h        -> help\n"
 		<< "         -n int    -> maximal iteration loops (default 200)\n"
 		<< "         -m double -> minimal loss value decrease (default 1e-03)\n"
+		<< "         -d int    -> specific the dimension of feature space\n"
 		<< "         -r [0,1]  -> 0: training model by SGD optimization (default)\n"
-		<< "                   -> 1: Gradient Descent optimization"		
+		<< "                   -> 1: Gradient Descent optimization\n"		
 		<< "         -l float  -> learning rate (default 1.0)\n"
 		<< "         -a        -> 0: final weight (default)\n"
 		<< "                   -> 1: average weights of all iteration loops\n"
@@ -23,7 +24,7 @@ void print_help() {
 
 void read_parameters(int argc, char *argv[], char *training_file, char *model_file, 
 						int *max_loop, double *loss_thrd, float *learn_rate, int *optim, 
-						int *avg, int *update, char *pre_model_file) {
+						int *avg, int *update, int *dimens, char *pre_model_file) {
 	// set default options
 	*max_loop = 200;
 	*loss_thrd = 1e-3;
@@ -31,6 +32,7 @@ void read_parameters(int argc, char *argv[], char *training_file, char *model_fi
 	*optim = 0;
 	*avg = 0;
 	*update = 0;
+	*dimens = 0;
 	int i;
 	for (i = 1; (i<argc) && (argv[i])[0]=='-'; i++) {
 		switch ((argv[i])[1]) {
@@ -54,6 +56,9 @@ void read_parameters(int argc, char *argv[], char *training_file, char *model_fi
 				break;
 			case 'u':
 				*update = atoi(argv[++i]);
+				break;
+			case 'd':
+				*dimens = atoi(argv[++i]);
 				break;
 			default:
 				cout << "Unrecognized option: " << argv[i] << "!" << endl;
@@ -89,11 +94,12 @@ int mp_train(int argc, char *argv[])
 	int optim;
 	int avg;
 	int update;
+	int dimension;
 	char pre_model_file[200];
-	read_parameters(argc, argv, training_file, model_file, &max_loop, &loss_thrd, &learn_rate, &optim, &avg, &update, pre_model_file);
+	read_parameters(argc, argv, training_file, model_file, &max_loop, &loss_thrd, &learn_rate, &optim, &avg, &update, &dimension, pre_model_file);
     
 	MultiPerceptron mp;
-    mp.load_training_file(training_file);
+    mp.load_training_file(training_file, dimension);
     if (update) {
 		mp.load_model(pre_model_file);
 	}
